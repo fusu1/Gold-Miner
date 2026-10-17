@@ -1,0 +1,21 @@
+node_modules/
+dist/
+output/
+.playwright-cli/
+*.local
+
+# Local verification and generated working files stay on this computer.
+/tests/
+coverage/
+playwright-report/
+test-results/
+*.log
+.env
+.env.*
+
+# Only runtime art belongs in the published repository.
+public/assets/**/prompts/
+public/assets/**/*.json
+public/assets/**/README.md
+public/assets/**/index.html
+public/assets/classic-v1/miner-pulling.png
