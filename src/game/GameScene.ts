@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { AppState } from '../app/AppState';
 import { SettingsStore } from '../app/SettingsStore';
+import { GameAudio } from '../audio/GameAudio';
+import { gameplayCues } from '../audio/cues';
 import { KeyboardInput } from '../input/KeyboardInput';
 import { AppUI } from '../ui/AppUI';
 import { TouchControls } from '../ui/TouchControls';
@@ -23,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   private keyboard!: KeyboardInput;
   private shell!: HTMLElement;
   private touch!: TouchControls;
+  private audio!: GameAudio;
   private focusLost = false;
   private suspended = true;
   private discardNextDelta = true;
@@ -57,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     const parent = document.getElementById('game');
     if (!parent) throw new Error('The game container is missing.');
     this.shell = document.getElementById('game-shell')!;
+    this.audio = new GameAudio(this.shell);
     this.appState.returnToMenu();
     this.run.reset();
     this.clock.reset();
@@ -98,7 +102,7 @@ export class GameScene extends Phaser.Scene {
         this.refreshApp();
       },
       buy: (id) => {
-        this.run.buy(id);
+        if (this.run.buy(id)) this.audio.play('collect');
         this.refreshApp();
       },
       nextLevel: () => {
@@ -119,6 +123,15 @@ export class GameScene extends Phaser.Scene {
       setShowHints: (visible) => {
         this.settings.setShowHints(visible);
         this.refreshApp();
+      },
+      setMusicEnabled: (enabled) => {
+        this.settings.setMusicEnabled(enabled);
+        this.refreshApp();
+      },
+      setSoundEnabled: (enabled) => {
+        this.settings.setSoundEnabled(enabled);
+        this.refreshApp();
+        if (enabled) this.audio.play('click');
       },
       resetSettings: () => {
         this.settings.reset();
@@ -161,7 +174,9 @@ export class GameScene extends Phaser.Scene {
     if (!this.suspended) {
       if (!this.discardNextDelta) this.clock.advance(delta, (seconds) => {
         if (this.run.getSnapshot().status !== 'playing') return;
+        const before = this.run.getSnapshot();
         this.run.step(seconds);
+        for (const cue of gameplayCues(before, this.run.getSnapshot())) this.audio.play(cue);
         this.view.advance(seconds);
       });
       this.discardNextDelta = false;
@@ -190,7 +205,7 @@ export class GameScene extends Phaser.Scene {
 
   private fire(): void {
     if (this.suspended) return;
-    this.run.fire();
+    if (this.run.fire()) this.audio.play('launch');
     this.renderTouch(this.run.getSnapshot());
   }
 
@@ -199,6 +214,7 @@ export class GameScene extends Phaser.Scene {
     const snapshot = this.run.getSnapshot().game;
     const position = getCargoDisplayPosition(snapshot) ?? snapshot.hook.position;
     if (!this.run.useBomb()) return;
+    this.audio.play('explosion');
     this.view.playExplosion(position.x, position.y);
     this.renderTouch(this.run.getSnapshot());
   }
@@ -219,6 +235,8 @@ export class GameScene extends Phaser.Scene {
     this.view.setPaused(state.screen === 'playing' && this.focusLost);
     this.view.setHintsVisible(settings.showHints && !this.touch.available);
     this.ui.render(state, settings, snapshot);
+    this.audio.configure(settings, this.focusLost || state.screen === 'paused'
+      || (state.screen === 'settings' && state.settingsReturn === 'paused'));
     this.renderTouch(snapshot);
     this.onFullscreenChange();
     this.announce(snapshot);
@@ -283,6 +301,7 @@ export class GameScene extends Phaser.Scene {
     this.events.off(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     this.events.off(Phaser.Scenes.Events.DESTROY, this.cleanup, this);
     this.keyboard.destroy();
+    this.audio.destroy();
     this.touch.destroy();
     this.ui.destroy();
     this.view.destroy();

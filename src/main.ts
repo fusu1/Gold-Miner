@@ -16,6 +16,7 @@ export const game = new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
+  // GameAudio owns the browser audio context; avoid creating a second Phaser mixer.
   audio: { noAudio: true },
   banner: false,
 });

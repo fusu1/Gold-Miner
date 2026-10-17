@@ -14,6 +14,8 @@ export interface AppUIActions {
   openSettings(): void;
   closeSettings(): void;
   setShowHints(visible: boolean): void;
+  setMusicEnabled(enabled: boolean): void;
+  setSoundEnabled(enabled: boolean): void;
   resetSettings(): void;
   toggleFullscreen(): void;
   enterShop(): void;
@@ -63,6 +65,8 @@ export class AppUI {
   private readonly levelButton: HTMLButtonElement;
   private readonly endlessButton: HTMLButtonElement;
   private readonly hintsCheckbox: HTMLInputElement;
+  private readonly musicCheckbox: HTMLInputElement;
+  private readonly soundCheckbox: HTMLInputElement;
   private readonly fullscreenButton: HTMLButtonElement;
   private readonly fullscreenState: HTMLElement;
   private readonly status: HTMLElement;
@@ -162,13 +166,13 @@ export class AppUI {
             <div><span class="gm-setting-name">全屏显示</span><p class="gm-setting-detail" data-fullscreen-state>当前为窗口模式</p></div>
             <button class="gm-small-button" type="button" data-action="fullscreen" aria-pressed="false">进入全屏</button>
           </div>
-          <div class="gm-setting-row gm-setting-disabled">
-            <label class="gm-check-label" for="${id}-music">背景音乐<span class="gm-setting-detail">音频尚未接入</span></label>
-            <input id="${id}-music" type="checkbox" disabled />
+          <div class="gm-setting-row">
+            <label class="gm-check-label" for="${id}-music">背景音乐<span class="gm-setting-detail">轻快循环配乐</span></label>
+            <input id="${id}-music" type="checkbox" data-setting="music" checked />
           </div>
-          <div class="gm-setting-row gm-setting-disabled">
-            <label class="gm-check-label" for="${id}-sound">游戏音效<span class="gm-setting-detail">音频尚未接入</span></label>
-            <input id="${id}-sound" type="checkbox" disabled />
+          <div class="gm-setting-row">
+            <label class="gm-check-label" for="${id}-sound">游戏音效<span class="gm-setting-detail">出钩、抓取、奖励和爆炸反馈</span></label>
+            <input id="${id}-sound" type="checkbox" data-setting="sound" checked />
           </div>
           <div class="gm-controls-guide" aria-labelledby="${id}-controls-title">
             <p class="gm-touch-copy">画面下方点「出钩」采集，拖拽时点「炸药」丢弃物品；点「暂停」可重新开始或返回菜单。</p>
@@ -266,6 +270,8 @@ export class AppUI {
     this.levelButton = this.find('[data-action="level"]');
     this.endlessButton = this.find('[data-action="endless"]');
     this.hintsCheckbox = this.find('[data-setting="hints"]');
+    this.musicCheckbox = this.find('[data-setting="music"]');
+    this.soundCheckbox = this.find('[data-setting="sound"]');
     this.fullscreenButton = this.find('[data-action="fullscreen"]');
     this.fullscreenState = this.find('[data-fullscreen-state]');
     this.status = this.find('.gm-settings-message');
@@ -300,6 +306,8 @@ export class AppUI {
     this.levelButton.setAttribute('aria-pressed', String(state.mode === 'level'));
     this.endlessButton.setAttribute('aria-pressed', String(state.mode === 'endless'));
     this.hintsCheckbox.checked = settings.showHints;
+    this.musicCheckbox.checked = settings.musicEnabled;
+    this.soundCheckbox.checked = settings.soundEnabled;
     if (state.screen === 'result') this.renderResult(run);
     if (state.screen === 'shop') this.renderShop(run);
     if (state.screen === 'level-intro') this.renderLevelIntro(run);
@@ -472,6 +480,8 @@ export class AppUI {
     if (event.target === this.hintsCheckbox) {
       this.actions.setShowHints(this.hintsCheckbox.checked);
     }
+    if (event.target === this.musicCheckbox) this.actions.setMusicEnabled(this.musicCheckbox.checked);
+    if (event.target === this.soundCheckbox) this.actions.setSoundEnabled(this.soundCheckbox.checked);
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {

@@ -1,8 +1,10 @@
 export interface UserSettings {
   readonly showHints: boolean;
+  readonly musicEnabled: boolean;
+  readonly soundEnabled: boolean;
 }
 
-export const DEFAULT_SETTINGS: UserSettings = Object.freeze({ showHints: true });
+export const DEFAULT_SETTINGS: UserSettings = Object.freeze({ showHints: true, musicEnabled: true, soundEnabled: true });
 
 const STORAGE_KEY = 'gold-miner.settings.v1';
 type SettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -30,7 +32,17 @@ export class SettingsStore {
   }
 
   setShowHints(visible: boolean): void {
-    this.settings = { showHints: visible };
+    this.settings = { ...this.settings, showHints: visible };
+    this.save();
+  }
+
+  setMusicEnabled(enabled: boolean): void {
+    this.settings = { ...this.settings, musicEnabled: enabled };
+    this.save();
+  }
+
+  setSoundEnabled(enabled: boolean): void {
+    this.settings = { ...this.settings, soundEnabled: enabled };
     this.save();
   }
 
@@ -51,7 +63,11 @@ export class SettingsStore {
         'showHints' in parsed &&
         typeof parsed.showHints === 'boolean'
       ) {
-        this.settings = { showHints: parsed.showHints };
+        this.settings = {
+          showHints: parsed.showHints,
+          musicEnabled: 'musicEnabled' in parsed && typeof parsed.musicEnabled === 'boolean' ? parsed.musicEnabled : true,
+          soundEnabled: 'soundEnabled' in parsed && typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : true,
+        };
       }
     } catch {
       // Missing permissions, unavailable storage and damaged JSON use defaults.
@@ -60,7 +76,7 @@ export class SettingsStore {
 
   private save(): void {
     try {
-      this.storage?.setItem(STORAGE_KEY, JSON.stringify({ showHints: this.settings.showHints }));
+      this.storage?.setItem(STORAGE_KEY, JSON.stringify(this.settings));
     } catch {
       // Preferences still work for this visit when persistence is unavailable.
     }
